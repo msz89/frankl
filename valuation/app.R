@@ -153,7 +153,12 @@ server <- function(input, output) {
     # Requires a 10 year rolling discounted value
     # Requires a utility value based on value = PQ/Vn
     # Output as a 2 column DF
-  })
+    DISCOUNT_RATE = 0.35
+    value_utility = get_market()[,3]/get_tokens()[,2]/get_velocity()
+    value_discount = value_utility[13:24]/(1+DISCOUNT_RATE)^10 #can we code this so the years are variable?
+    # Marry up years 2018-2029, utility from 2018-2029, and discounts calculated from 2028-2039
+    df = data.frame (Year = year[3:14], Utility = value_utility[3:14], Discount = value_discount)
+    })
   
   get_ratios <- reactive({
     # calculate a ultility value / market ratio
@@ -190,8 +195,9 @@ server <- function(input, output) {
   })
   
   # Generate a plot of market
+  # Need to Sort labels for columns w/out names
   output$market_plot <- renderPlot({
-    df =  t(as.matrix(get_market()[3:13,]))
+    df =  t(as.matrix(get_market()[3:14,]))
     barplot(df/10e9,
             main = "Market breakdown", 
             ylab = "USD$ Billion", # Hack the relable
@@ -203,8 +209,8 @@ server <- function(input, output) {
   
   # Generate a plot of value
   output$value_plot <- renderPlot({
-    df = data.frame(year, get_market()[,3]/get_tokens()[,2]/get_velocity())
-    plot(df[3:13,],
+    df = as.matrix(get_values())
+    plot(df,
          type = c("l"),
          ylab = "Token Value $US"
     )
@@ -213,7 +219,7 @@ server <- function(input, output) {
   # Generate a plot of ratio
   output$ratio_plot <- renderPlot({
     df = data.frame(year, get_market()[,3]/get_tokens()[,1])
-    plot(df[3:13,],
+    plot(df[3:14,],
          type = c("l")
     )
     
