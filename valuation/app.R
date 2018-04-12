@@ -87,32 +87,54 @@ year_n = year-START_YEAR
 # Define server logic to execute plots, and run the engine
 server <- function(input, output) {
   
+  # Get functions ---
+  # These store the main calcs so the output plots can be simplified
+  
+  get_saturation <- reactive({
+    sat_k = 0.6
+    saturation = input$sat_L/(1+exp(-sat_k*(year-input$sat_xo))) # Set saturation based on input$variable
+    })
+  
+  get_velocity <- reactive({
+    vel_k = 0.3
+    velocity = input$vel_L/(1+exp(-vel_k*(year-input$vel_xo)))
+  })
+  
+  get_market <- reactive({
+    
+  })
+  
+  get_tokens <- reactive({
+    
+  })
+  
+  get_values <- reactive({
+    
+  })
+  
+  get_ratios <- reactive({
+    
+  })
+  
+  
   # Generate a plot of Market saturation
   output$saturation_plot <- renderPlot({
     
-    sat_k = 0.6
-    saturation = input$sat_L/(1+exp(-sat_k*(year-input$sat_xo))) # Set saturation based on input$variable
-    plot(data.frame(year,saturation)[2:12,], 
+    plot(data.frame(year,get_saturation())[2:12,], 
          type = c("l"), 
          ylim = c(0,50),
          ylab = "Saturation %"
-         )# Plot this
-    
+         )
   })
   
   # Generate a plot of Velocity
   output$velocity_plot <- renderPlot({
     
-    vel_k = 0.3
-    velocity = input$vel_L/(1+exp(-vel_k*(year-input$vel_xo)))
-    
-    # PLOT
-    plot(data.frame(year,velocity)[2:12,], 
+    plot(data.frame(year,get_velocity())[2:12,], 
          type = c("l"), 
          ylim = c(0,20),
          ylab = "Velocity"
-         )# Plot this
-    
+         )
   })
   
   # Generate a plot of tokens
@@ -166,11 +188,10 @@ server <- function(input, output) {
     # Market size > PQ
     market_total = START_MARKET_SIZE*(1+input$cagr/100)^year_n
     market_addressable = market_total * input$addressable/100
-    saturation = input$sat_L/(1+exp(-sat_k*(year-input$sat_xo))) # Recalc saturation based on input$variable
-    market_share = market_addressable * saturation/100 #PQ
+    market_share = market_addressable * get_saturation()/100 #PQ
 
     # PLOT
-    df = data.frame(Total = market_total, Addressable = market_addressable, Share = market_share)
+    df = data.frame(Total = market_total, Addressable = market_addressable, Frankl = market_share)
     barplot(t(as.matrix(df[3:13,]))/10e9,
             names=year[3:13],
             main="Market breakdown", 
