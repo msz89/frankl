@@ -17,7 +17,7 @@ ui <- fluidPage(
   # ROW 1
   fluidRow(
     
-    column(8,
+    column(6,
            
            h3("Frankl market share",align="center"),
            plotOutput("market_plot"),
@@ -33,7 +33,7 @@ ui <- fluidPage(
            br()
     ),
     
-    column(4,
+    column(6,
            h3("Frankl Token Value",align="center"),
            plotOutput("value_plot"),
            plotOutput("ratio_plot")
@@ -101,19 +101,62 @@ server <- function(input, output) {
   })
   
   get_market <- reactive({
-    
+    # Market size > PQ
+    market_total = START_MARKET_SIZE*(1+input$cagr/100)^year_n
+    market_addressable = market_total * input$addressable/100
+    market_share = market_addressable * get_saturation()/100 #PQ
+    # Output
+    df = data.frame(Total = market_total, Addressable = market_addressable, Frankl = market_share)
   })
   
   get_tokens <- reactive({
     
+    # ICO 
+    frankl_minted = 600*10e3*10e6
+    #ico1 = 0.55 #var for modelling
+    ico2 = 0.1 ###build in 33% if ico1 doesnt happen
+    
+    ico_v = year_n*0
+    ico_v[1] = input$ico1/100
+    ico_v[2] = 0.15
+    
+    # Foundation
+    foundation_share = 0.15
+    foundation_years = 10 
+    foundation_v = year_n*0
+    foundation_v[1:foundation_years] = foundation_share / foundation_years
+    
+    # Founding Team
+    founder_share = 0.15 
+    founder_years = 6 
+    founder_v = year_n*0
+    founder_v[1:founder_years] = founder_share / founder_years
+    
+    share_issued = cumsum(ico_v + founder_v + foundation_v) # as %
+    
+    # Hodl
+    hodl_base = 0.5
+    hodl_delta = 0.01
+    hodl = hodl_base - (year_n*hodl_delta) # as %
+    
+    # Tokens
+    tokens_issued = share_issued * frankl_minted
+    tokens_hodl = share_issued * hodl * frankl_minted
+    tokens_used = share_issued * (1-hodl) * frankl_minted
+    
+    # Output a dataframe
+    df = data.frame(Hodl = tokens_hodl, Used = tokens_used)
+    
   })
   
   get_values <- reactive({
-    
+    # Requires a 10 year rolling discounted value
+    # Requires a utility value based on value = PQ/Vn
+    # Output as a 2 column DF
   })
   
   get_ratios <- reactive({
-    
+    # calculate a ultility value / market ratio
   })
   
   
@@ -139,83 +182,38 @@ server <- function(input, output) {
   
   # Generate a plot of tokens
   output$tokens_plot <- renderPlot({
-    
-    # ICO 
-    frankl_minted = 600*10e3*10e6
-    #ico1 = 0.55 #var for modelling
-    ico2 = 0.1 #build in 33% if ico1 doesnt happen
-    
-    ico_v = year_n*0
-    ico_v[1] = input$ico1/100
-    ico_v[2] = 0.15
-    
-    # Foundation
-    foundation_share = 0.15
-    foundation_years = 10 
-    foundation_v = year_n*0
-    foundation_v[1:foundation_years] = foundation_share / foundation_years
-    
-    # Founding Team
-    founder_share = 0.15 
-    founder_years = 6 
-    founder_v = year_n*0
-    founder_v[1:founder_years] = founder_share / founder_years
-    
-    share_issued = cumsum(ico_v + founder_v + foundation_v) # as %
-    
-    # Hodl
-    hodl_base = 0.5
-    hodl_delta = 0.01
-    hodl = hodl_base - (year_n*hodl_delta)
-    
-    # Tokens
-    tokens_issued = share_issued * frankl_minted
-    tokens_hodl = share_issued * hodl * frankl_minted
-    tokens_used = share_issued * (1-hodl) * frankl_minted
-    
-    # PLOT
-    barplot(as.matrix(t(data.frame(tokens_issued/10e9)[1:10,])), 
-            names=year[3:12],
+    df = as.matrix(get_tokens()[1:10,])
+    barplot(t(df)/10e9, 
             ylab = "Tokens issued (Billion)",
             ylim=c(0,6000)
          )
-    
   })
   
   # Generate a plot of market
   output$market_plot <- renderPlot({
-    
-    # Market size > PQ
-    market_total = START_MARKET_SIZE*(1+input$cagr/100)^year_n
-    market_addressable = market_total * input$addressable/100
-    market_share = market_addressable * get_saturation()/100 #PQ
-
-    # PLOT
-    df = data.frame(Total = market_total, Addressable = market_addressable, Frankl = market_share)
-    barplot(t(as.matrix(df[3:13,]))/10e9,
-            names=year[3:13],
-            main="Market breakdown", 
+    df =  t(as.matrix(get_market()[3:13,]))
+    barplot(df/10e9,
+            main = "Market breakdown", 
             ylab = "USD$ Billion", # Hack the relable
-            legend = colnames(df), 
-            beside=TRUE,
+            legend = colnames(get_market()), 
+            beside = TRUE,
             args.legend = list(x = "topleft", bty = "n")
             )
   })
   
   # Generate a plot of value
-  # Fix this to calaculate in steps and recalc when everything is done.
   output$value_plot <- renderPlot({
-    plot(data.frame(market_share/tokens_used)[3:13,], #get these two to flow through
-         names=year[3:13],
-         type = c("l")
+    df = data.frame(year, get_market()[,3]/get_tokens()[,2]/get_velocity())
+    plot(df[3:13,],
+         type = c("l"),
+         ylab = "Token Value $US"
     )
   })
   
   # Generate a plot of ratio
-  # Fix this to calaculate in steps and recalc when everything is done.
   output$ratio_plot <- renderPlot({
-    plot(data.frame(market_share/tokens_hodl)[3:13,], #get these two to flow through
-         names=year[3:13],
+    df = data.frame(year, get_market()[,3]/get_tokens()[,1])
+    plot(df[3:13,],
          type = c("l")
     )
     
