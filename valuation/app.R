@@ -1,10 +1,12 @@
 library(shiny)
+
+# CONSTANTS
 START_YEAR = 2016
 END_YEAR = 2050
 START_MARKET_SIZE = 3.5e9
 PLOT_YRS=c(2018,2028)
 
-# Define UI for miles per gallon app ----
+# Define UI for Valuation APP
 ui <- fluidPage(
   
   # App title ----
