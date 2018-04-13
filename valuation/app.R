@@ -1,5 +1,4 @@
 library(shiny)
-
 # CONSTANTS
 START_YEAR = 2016
 END_YEAR = 2050
@@ -8,12 +7,13 @@ PLOT_YRS=c(2018,2028)
 
 # Define UI for Valuation APP
 ui <- fluidPage(
-  
-  # App title ----
-  titlePanel("Frankl Token Valuation Model"),
+  # App title ---- As Image
+  img(src = "rstudio.jpeg", 
+      height = 140, 
+      width = 400 
+      ),
   
   # Rows and Columns
-  
   # ROW 1
   fluidRow(
     
@@ -29,6 +29,10 @@ ui <- fluidPage(
            sliderInput('addressable', 'Addressable market %', 
                        min=30, max=100, value=80, 
                        step=5),
+           sliderInput('discount_rate', 'Discount Rate %', 
+                       min=10, max=40, value=30, 
+                       step=1),
+           
            p("Some lorem ipsum about what this is and why it was chosen. Perhaps a link to the whitepaper"),
            br()
     ),
@@ -150,20 +154,24 @@ server <- function(input, output) {
   })
   
   get_values <- reactive({
-    # Requires a 10 year rolling discounted value
+    # Requires a 10 year rolling discounted value. [13:24] represents years 2028-2039
     # Requires a utility value based on value = PQ/Vn
     # Output as a 2 column DF
-    DISCOUNT_RATE = 0.35
     value_utility = get_market()[,3]/get_tokens()[,2]/get_velocity()
-    value_discount = value_utility[13:24]/(1+DISCOUNT_RATE)^10 #can we code this so the years are variable?
+    value_discount = value_utility[13:24]/(1+input$discount_rate/100)^10 #can we code this so the years are variable?
     # Marry up years 2018-2029, utility from 2018-2029, and discounts calculated from 2028-2039
     df = data.frame (Year = year[3:14], Utility = value_utility[3:14], Discount = value_discount)
     })
   
   get_ratios <- reactive({
     # calculate a ultility value / market ratio
+    ratios = data.frame(Year = year[3:14], Ratio = get_values()[,3]/get_values()[,2])
   })
   
+  five_places <- function(l) {
+    #show 6dp and scientific off
+    l <- signif(l*100, digits=6)
+  }
   
   # Generate a plot of Market saturation
   output$saturation_plot <- renderPlot({
@@ -209,20 +217,25 @@ server <- function(input, output) {
   
   # Generate a plot of value
   output$value_plot <- renderPlot({
-    df = as.matrix(get_values())
-    plot(df,
-         type = c("l"),
-         ylab = "Token Value $US"
-    )
-  })
+    df = get_values()
+    # ggplot(data = df, aes(x = Year)) + 
+    #   geom_line(aes(y = Discount, colour = "Discounted value")) +
+    #   geom_line(aes(y = Utility, colour = "Utility value")) +
+    #   ylab("Value (US c)") +
+    #   scale_y_continuous(label = five_places) + 
+    #   scale_x_continuous()
+    plot(df[c(1,2)], type=c("l"), col = "red")
+    lines(df[c(1,3)], col = "blue")
+    })
   
   # Generate a plot of ratio
   output$ratio_plot <- renderPlot({
-    df = data.frame(year, get_market()[,3]/get_tokens()[,1])
-    plot(df[3:14,],
-         type = c("l")
+    df = get_ratios()
+    plot(df,
+         type = c("l"),
+         ylab = "Market Value / Utility Value Ratio"
     )
-    
+
   })
 }
 
