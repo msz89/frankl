@@ -4,6 +4,7 @@ START_YEAR = 2016
 END_YEAR = 2050
 START_MARKET_SIZE = 3.5e9
 PLOT_YRS=c(2018,2028)
+paragraph_text = "*CGAR = Compound annual growth rate."
 
 # Define UI for Valuation APP
 ui <- fluidPage(
@@ -19,7 +20,7 @@ ui <- fluidPage(
     
     column(6,
            
-           h3("Frankl market share",align="center"),
+           h3("Frankl market share inputs",align="center"),
            plotOutput("market_plot"),
 
            #h3("Market inputs",align="center"),
@@ -33,12 +34,11 @@ ui <- fluidPage(
                        min=10, max=40, value=30, 
                        step=1),
            
-           p("Some lorem ipsum about what this is and why it was chosen. Perhaps a link to the whitepaper"),
-           br()
+           p(paragraph_text)
     ),
     
     column(6,
-           h3("Frankl Token Value",align="center"),
+           h3("Frankl valuation outputs",align="center"),
            plotOutput("value_plot"),
            plotOutput("ratio_plot")
     )
@@ -110,7 +110,7 @@ server <- function(input, output) {
     market_addressable = market_total * input$addressable/100
     market_share = market_addressable * get_saturation()/100 #PQ
     # Output
-    df = data.frame(Total = market_total, Addressable = market_addressable, Frankl = market_share)
+    df = data.frame(row.names = year, Total = market_total, Addressable = market_addressable, Frankl = market_share)
   })
   
   get_tokens <- reactive({
@@ -149,18 +149,18 @@ server <- function(input, output) {
     tokens_used = share_issued * (1-hodl) * frankl_minted
     
     # Output a dataframe
-    df = data.frame(Hodl = tokens_hodl, Used = tokens_used)
+    df = data.frame(row.names = year, Hodl = tokens_hodl, Used = tokens_used)
     
   })
   
   get_values <- reactive({
     # Requires a 10 year rolling discounted value. [13:24] represents years 2028-2039
     # Requires a utility value based on value = PQ/Vn
-    # Output as a 2 column DF
+    # Output as a 2 column DF in CENTS US
     value_utility = get_market()[,3]/get_tokens()[,2]/get_velocity()
     value_discount = value_utility[13:24]/(1+input$discount_rate/100)^10 #can we code this so the years are variable?
     # Marry up years 2018-2029, utility from 2018-2029, and discounts calculated from 2028-2039
-    df = data.frame (Year = year[3:14], Utility = value_utility[3:14], Discount = value_discount)
+    df = data.frame (Year = year[3:14], Utility = 100 * value_utility[3:14], Discount = 100 * value_discount)
     })
   
   get_ratios <- reactive({
@@ -168,15 +168,11 @@ server <- function(input, output) {
     ratios = data.frame(Year = year[3:14], Ratio = get_values()[,3]/get_values()[,2])
   })
   
-  five_places <- function(l) {
-    #show 6dp and scientific off
-    l <- signif(l*100, digits=6)
-  }
-  
   # Generate a plot of Market saturation
   output$saturation_plot <- renderPlot({
     
-    plot(data.frame(year,get_saturation())[2:12,], 
+    plot(data.frame(year,get_saturation())[2:12,],
+         main = "Frankl market share over time",
          type = c("l"), 
          ylim = c(0,50),
          ylab = "Saturation %"
@@ -186,7 +182,8 @@ server <- function(input, output) {
   # Generate a plot of Velocity
   output$velocity_plot <- renderPlot({
     
-    plot(data.frame(year,get_velocity())[2:12,], 
+    plot(data.frame(year,get_velocity())[2:12,],
+         main = "Frankl token velocity",
          type = c("l"), 
          ylim = c(0,20),
          ylab = "Velocity"
@@ -196,7 +193,8 @@ server <- function(input, output) {
   # Generate a plot of tokens
   output$tokens_plot <- renderPlot({
     df = as.matrix(get_tokens()[1:10,])
-    barplot(t(df)/10e9, 
+    barplot(t(df)/10e9,
+            main = "Frankl tokens in circulation",
             ylab = "Tokens issued (Billion)",
             ylim=c(0,6000)
          )
@@ -208,7 +206,7 @@ server <- function(input, output) {
     df =  t(as.matrix(get_market()[3:14,]))
     barplot(df/10e9,
             main = "Market breakdown", 
-            ylab = "USD$ Billion", # Hack the relable
+            ylab = "$US Billion", # Hack the relable
             legend = colnames(get_market()), 
             beside = TRUE,
             args.legend = list(x = "topleft", bty = "n")
@@ -216,22 +214,26 @@ server <- function(input, output) {
   })
   
   # Generate a plot of value
+  # Add Legend
   output$value_plot <- renderPlot({
     df = get_values()
-    # ggplot(data = df, aes(x = Year)) + 
-    #   geom_line(aes(y = Discount, colour = "Discounted value")) +
-    #   geom_line(aes(y = Utility, colour = "Utility value")) +
-    #   ylab("Value (US c)") +
-    #   scale_y_continuous(label = five_places) + 
-    #   scale_x_continuous()
-    plot(df[c(1,2)], type=c("l"), col = "red")
-    lines(df[c(1,3)], col = "blue")
-    })
+    plot(df[c(1,2)], 
+         main = "Frankl Token Value",
+         type = c("l"),
+         ylab = "Value US¢",
+         col = "red"
+         )
+    
+    lines(df[c(1,3)], 
+          col = "blue"
+          )
+  })
   
   # Generate a plot of ratio
   output$ratio_plot <- renderPlot({
     df = get_ratios()
     plot(df,
+         main = "Ratio of discounted market value to utility",
          type = c("l"),
          ylab = "Market Value / Utility Value Ratio"
     )
@@ -239,5 +241,6 @@ server <- function(input, output) {
   })
 }
 
+# Call the main function
 shinyApp(ui, server)
 

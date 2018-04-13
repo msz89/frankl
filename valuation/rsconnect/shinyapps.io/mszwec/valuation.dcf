@@ -1,0 +1,13 @@
+name: valuation
+title: valuation
+username:
+account: mszwec
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 321394
+bundleId: 1316816
+url: https://mszwec.shinyapps.io/valuation/
+when: 1523602191.72713
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: www/logo-type-white.svg
