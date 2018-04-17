@@ -1,16 +1,19 @@
-head {
+div.container-fluid{
+  margin: 0px 0px 0px 0px;
+	padding: 0px 0px 0px 0px;
+}
+
+div.col-sm-12 {
 	background-color: #31b3ed;
-	border: 10px solid black;
 	margin: 0px 0px 0px 0px;
 	padding: 0px 0px 0px 0px;
 }
+
 h1 {
     background-color: #31b3ed;
     /*text-align: center;*/
-    margin-top: 0px;
-    margin-bottom: 0px;
-    margin-right: 0px;
-    margin-left: 0px;
+	margin: 0px 0px 0px 0px;
+	padding: 5px 0px 5px 20px;
 }
 h3 {
 	font-family: "Segoe UI";
