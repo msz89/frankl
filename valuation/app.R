@@ -1,4 +1,5 @@
 library(shiny)
+
 # CONSTANTS
 START_YEAR = 2016
 END_YEAR = 2050
@@ -118,28 +119,29 @@ server <- function(input, output) {
     
     # ICO 
     frankl_minted = 6*10e3*10e6
-    print(frankl_minted)
-    #ico1 = 0.55 #var for modelling
-    ico2 = 0.1 ###build in 33% if ico1 doesnt happen
     
     ico_v = year_n*0
-    ico_v[1] = input$ico1/100
-    ico_v[2] = 0.15
+    ico_1 = 0.55
+    ico_v[3] = input$ico1/100
+    ico_2 = 0.15 + ico_1 - input$ico1/100
+    ico_v[4] = ico_2
     
     # Foundation
     foundation_share = 0.15
     foundation_years = 10 
     foundation_v = year_n*0
-    foundation_v[1:foundation_years] = foundation_share / foundation_years
+    foundation_v[3:(2+foundation_years)] = foundation_share / foundation_years
+    
+    print(foundation_v)
     
     # Founding Team
     founder_share = 0.15 
     founder_years = 6 
     founder_v = year_n*0
-    founder_v[1:founder_years] = founder_share / founder_years
+    founder_v[3:(2+founder_years)] = founder_share / founder_years
     
     share_issued = cumsum(ico_v + founder_v + foundation_v) # as %
-    
+    print(share_issued)
     # Hodl
     hodl_base = 0.5
     hodl_delta = 0.01
@@ -152,6 +154,7 @@ server <- function(input, output) {
     
     # Output a dataframe
     df = data.frame(row.names = year, Hodl = tokens_hodl, Used = tokens_used)
+    print(df)
     
   })
   
@@ -196,10 +199,10 @@ server <- function(input, output) {
   output$tokens_plot <- renderPlot({
     df = as.matrix(get_tokens()[1:10,])
     par(bg = BG_LIGHT)
-    barplot(t(df)/10e9,
+    barplot(t(df)/1e9,
             main = "Frankl tokens in circulation",
             ylab = "Tokens issued (Billion)",
-            ylim=c(0,6000)
+            ylim=c(0,700)
          )
   })
   
