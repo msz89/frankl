@@ -241,6 +241,10 @@ server <- function(input, output) {
     lines(df[c(1,3)], 
           col = "blue"
           )
+    legend(2018,max(get_values()[,2]), # places a legend at the appropriate place 
+           c("Utility Value","Discounted Value"), # puts text in the legend 
+           lty=c(1,1), # gives the legend appropriate symbols (lines)
+           lwd=c(2.5,2.5), col=c("red","blue"))# gives the legend lines the correct color and width
   })
   
   # Generate a plot of ratio
