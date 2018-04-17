@@ -5,83 +5,84 @@ END_YEAR = 2050
 START_MARKET_SIZE = 3.5e9
 PLOT_YRS=c(2018,2028)
 paragraph_text = "*CGAR = Compound annual growth rate."
+BG_LIGHT = "#d5f0fb"
 
-# Define UI for Valuation APP
-ui <- fluidPage(
-  # App title ---- As Image
-  img(src = "rstudio.jpeg", 
-      height = 140, 
-      width = 400 
-      ),
-  
-  # Rows and Columns
-  # ROW 1
-  fluidRow(
-    
-    column(6,
-           
-           h3("Frankl market share inputs",align="center"),
-           plotOutput("market_plot"),
-
-           #h3("Market inputs",align="center"),
-           sliderInput('cagr', 'CAGR* %', 
-                       min=10, max=40, value=32, 
-                       step=1),
-           sliderInput('addressable', 'Addressable market %', 
-                       min=30, max=100, value=80, 
-                       step=5),
-           sliderInput('discount_rate', 'Discount Rate %', 
-                       min=10, max=40, value=30, 
-                       step=1),
-           
-           p(paragraph_text)
-    ),
-    
-    column(6,
-           h3("Frankl valuation outputs",align="center"),
-           plotOutput("value_plot"),
-           plotOutput("ratio_plot")
-    )
+# ROW 1
+row_1 <-fluidRow(
+  column(6,
+         
+         h3("Frankl market share inputs",align="center"),
+         plotOutput("market_plot"),
+         
+         #h3("Market inputs",align="center"),
+         sliderInput('cagr', 'CAGR* %', 
+                     min=10, max=40, value=32, 
+                     step=1),
+         sliderInput('addressable', 'Addressable market %', 
+                     min=30, max=100, value=80, 
+                     step=5),
+         sliderInput('discount_rate', 'Discount Rate %', 
+                     min=10, max=40, value=30, 
+                     step=1),
+         
+         p(paragraph_text)
   ),
   
-  # ROW 2
-  fluidRow(
-    
-    column(4,
-           
-           h3("Market share inputs",align="center"),
-           plotOutput("saturation_plot", height=300),
-           sliderInput('sat_L', 'Market saturation %', 
-                       min=5, max=50, value=20, 
-                       step=5),
-           sliderInput('sat_xo', 'Linear growth year', 
-                       min=2020, max=2025, value=2024, 
-                       step=1)
-    ),
-    
-    column(4,
-           
-           h3("Velocity inputs",align="center"),
-           plotOutput("velocity_plot", height=300),
-           sliderInput('vel_L', 'Final velocity', 
-                       min=2, max=18, value=10, 
-                       step=1),
-           sliderInput('vel_xo', 'Linear growth year', 
-                       min=2020, max=2025, value=2024, 
-                       step=1)
-    ),
-    
-    
-    column(4,
-           
-           h3("Token release",align="center"),
-           plotOutput("tokens_plot", height=300),
-           sliderInput('ico1', '% issued at first ICO', 
-                       min=10, max=55, value=40, 
-                       step=1)
-    )
-    
+  column(6,
+         h3("Frankl valuation outputs",align="center"),
+         plotOutput("value_plot"),
+         plotOutput("ratio_plot")
   )
+)
+
+# ROW 1
+row_2 <- fluidRow(
+  
+  column(4,
+         
+         h3("Market share inputs",align="center"),
+         plotOutput("saturation_plot", height=300),
+         sliderInput('sat_L', 'Market saturation %', 
+                     min=5, max=50, value=20, 
+                     step=5),
+         sliderInput('sat_xo', 'Linear growth year', 
+                     min=2020, max=2025, value=2024, 
+                     step=1)
+  ),
+  
+  column(4,
+         
+         h3("Velocity inputs",align="center"),
+         plotOutput("velocity_plot", height=300),
+         sliderInput('vel_L', 'Final velocity', 
+                     min=2, max=18, value=10, 
+                     step=1),
+         sliderInput('vel_xo', 'Linear growth year', 
+                     min=2020, max=2025, value=2024, 
+                     step=1)
+  ),
+  
+  
+  column(4,
+         
+         h3("Token release",align="center"),
+         plotOutput("tokens_plot", height=300),
+         sliderInput('ico1', '% issued at first ICO', 
+                     min=10, max=55, value=40, 
+                     step=1)
+  )
+  
+)
+
+# Define UI for Valuation APP
+ui <- fluidPage(theme="bootstrap.css",
+  # App title ---- As Image
+  headerPanel(img(src = "frankl-type-white.png", 
+      height = 140, 
+      width = 400
+      )),
+  row_1,
+  row_2
 )
 
 # DATA SETUP
@@ -116,7 +117,8 @@ server <- function(input, output) {
   get_tokens <- reactive({
     
     # ICO 
-    frankl_minted = 600*10e3*10e6
+    frankl_minted = 6*10e3*10e6
+    print(frankl_minted)
     #ico1 = 0.55 #var for modelling
     ico2 = 0.1 ###build in 33% if ico1 doesnt happen
     
@@ -170,7 +172,7 @@ server <- function(input, output) {
   
   # Generate a plot of Market saturation
   output$saturation_plot <- renderPlot({
-    
+    par(bg = BG_LIGHT)
     plot(data.frame(year,get_saturation())[2:12,],
          main = "Frankl market share over time",
          type = c("l"), 
@@ -181,7 +183,7 @@ server <- function(input, output) {
   
   # Generate a plot of Velocity
   output$velocity_plot <- renderPlot({
-    
+    par(bg = BG_LIGHT)
     plot(data.frame(year,get_velocity())[2:12,],
          main = "Frankl token velocity",
          type = c("l"), 
@@ -193,6 +195,7 @@ server <- function(input, output) {
   # Generate a plot of tokens
   output$tokens_plot <- renderPlot({
     df = as.matrix(get_tokens()[1:10,])
+    par(bg = BG_LIGHT)
     barplot(t(df)/10e9,
             main = "Frankl tokens in circulation",
             ylab = "Tokens issued (Billion)",
@@ -204,6 +207,7 @@ server <- function(input, output) {
   # Need to Sort labels for columns w/out names
   output$market_plot <- renderPlot({
     df =  t(as.matrix(get_market()[3:14,]))
+    par(bg = BG_LIGHT)
     barplot(df/10e9,
             main = "Market breakdown", 
             ylab = "$US Billion", # Hack the relable
@@ -217,6 +221,7 @@ server <- function(input, output) {
   # Add Legend
   output$value_plot <- renderPlot({
     df = get_values()
+    par(bg = BG_LIGHT)
     plot(df[c(1,2)], 
          main = "Frankl Token Value",
          type = c("l"),
@@ -232,6 +237,7 @@ server <- function(input, output) {
   # Generate a plot of ratio
   output$ratio_plot <- renderPlot({
     df = get_ratios()
+    par(bg = BG_LIGHT)
     plot(df,
          main = "Ratio of discounted market value to utility",
          type = c("l"),
