@@ -31,7 +31,8 @@ row_1 <-fluidRow(
   
   column(6,
          h3("Frankl valuation outputs",align="center"),
-         plotOutput("value_plot"),
+         plotOutput("value_plot", click = "plot_click"),
+         verbatimTextOutput("info"),
          plotOutput("ratio_plot")
   )
 )
@@ -88,8 +89,8 @@ ui <- fluidPage(theme="bootstrap.css",
       width = 400
       )),
   row_1,
-  row_2,
-  row_3
+  row_2
+  #,row_3 # hide row three. row three for debugging Dataframes in the enginer
 )
 
 # DATA SETUP
@@ -167,7 +168,6 @@ server <- function(input, output) {
     # Output as a 2 column DF in CENTS US
     value_utility = get_market()[,3]/get_tokens()[,2]/get_velocity()
     value_discount = value_utility[13:24]/(1+input$discount_rate/100)^10 #can we code this so the years are variable?
-    print((1+input$discount_rate/100)^10)
     # Marry up years 2018-2029, utility from 2018-2029, and discounts calculated from 2028-2039
     df = data.frame (Year = year[3:14], Utility = 100 * value_utility[3:14], Discount = 100 * value_discount)
     })
@@ -251,6 +251,11 @@ server <- function(input, output) {
          ylab = "Market Value / Utility Value Ratio"
     )
 
+  })
+  
+
+  output$info <- renderText({
+    paste0("x=", format(input$plot_click$x, digits = 1), "\ny=", format(input$plot_click$y, digits = 4))
   })
   
   output$table_all <- renderTable(data.frame(Year = year, 
