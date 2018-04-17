@@ -3,7 +3,7 @@ library(shiny)
 # CONSTANTS
 START_YEAR = 2016
 END_YEAR = 2050
-START_MARKET_SIZE = 3.5e9
+START_MARKET_SIZE = 1.98e9
 PLOT_YRS=c(2018,2028)
 paragraph_text = "*CGAR = Compound annual growth rate."
 BG_LIGHT = "#d5f0fb"
@@ -75,6 +75,11 @@ row_2 <- fluidRow(
   
 )
 
+row_3 <- fluidRow(
+  tableOutput("table_all"),
+  tableOutput("table_values")
+)
+
 # Define UI for Valuation APP
 ui <- fluidPage(theme="bootstrap.css",
   # App title ---- As Image
@@ -83,7 +88,8 @@ ui <- fluidPage(theme="bootstrap.css",
       width = 400
       )),
   row_1,
-  row_2
+  row_2,
+  row_3
 )
 
 # DATA SETUP
@@ -132,8 +138,6 @@ server <- function(input, output) {
     foundation_v = year_n*0
     foundation_v[3:(2+foundation_years)] = foundation_share / foundation_years
     
-    print(foundation_v)
-    
     # Founding Team
     founder_share = 0.15 
     founder_years = 6 
@@ -141,12 +145,12 @@ server <- function(input, output) {
     founder_v[3:(2+founder_years)] = founder_share / founder_years
     
     share_issued = cumsum(ico_v + founder_v + foundation_v) # as %
-    print(share_issued)
+
     # Hodl
-    hodl_base = 0.5
+    hodl_base = 0.6
     hodl_delta = 0.01
-    hodl = hodl_base - (year_n*hodl_delta) # as %
-    
+    hodl = hodl_base - ((year_n-2)*hodl_delta) # as %
+
     # Tokens
     tokens_issued = share_issued * frankl_minted
     tokens_hodl = share_issued * hodl * frankl_minted
@@ -154,8 +158,7 @@ server <- function(input, output) {
     
     # Output a dataframe
     df = data.frame(row.names = year, Hodl = tokens_hodl, Used = tokens_used)
-    print(df)
-    
+
   })
   
   get_values <- reactive({
@@ -164,6 +167,7 @@ server <- function(input, output) {
     # Output as a 2 column DF in CENTS US
     value_utility = get_market()[,3]/get_tokens()[,2]/get_velocity()
     value_discount = value_utility[13:24]/(1+input$discount_rate/100)^10 #can we code this so the years are variable?
+    print((1+input$discount_rate/100)^10)
     # Marry up years 2018-2029, utility from 2018-2029, and discounts calculated from 2028-2039
     df = data.frame (Year = year[3:14], Utility = 100 * value_utility[3:14], Discount = 100 * value_discount)
     })
@@ -176,7 +180,7 @@ server <- function(input, output) {
   # Generate a plot of Market saturation
   output$saturation_plot <- renderPlot({
     par(bg = BG_LIGHT)
-    plot(data.frame(year,get_saturation())[2:12,],
+    plot(data.frame(year,get_saturation())[3:14,],
          main = "Frankl market share over time",
          type = c("l"), 
          ylim = c(0,50),
@@ -187,7 +191,7 @@ server <- function(input, output) {
   # Generate a plot of Velocity
   output$velocity_plot <- renderPlot({
     par(bg = BG_LIGHT)
-    plot(data.frame(year,get_velocity())[2:12,],
+    plot(data.frame(year,get_velocity())[3:14,],
          main = "Frankl token velocity",
          type = c("l"), 
          ylim = c(0,20),
@@ -197,7 +201,7 @@ server <- function(input, output) {
   
   # Generate a plot of tokens
   output$tokens_plot <- renderPlot({
-    df = as.matrix(get_tokens()[1:10,])
+    df = as.matrix(get_tokens()[3:14,])
     par(bg = BG_LIGHT)
     barplot(t(df)/1e9,
             main = "Frankl tokens in circulation",
@@ -248,6 +252,17 @@ server <- function(input, output) {
     )
 
   })
+  
+  output$table_all <- renderTable(data.frame(Year = year, 
+                                             Saturation = get_saturation(), 
+                                             Velocity = get_velocity(), 
+                                             get_market(),
+                                             get_tokens()
+                                             ))
+  output$table_values <- renderTable(data.frame(get_values(),
+                                                get_ratios()
+  ), digits = 6)
+  
 }
 
 # Call the main function
