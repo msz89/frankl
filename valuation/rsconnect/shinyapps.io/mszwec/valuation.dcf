@@ -5,9 +5,8 @@ account: mszwec
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 321394
-bundleId: 1322523
+bundleId: 1322657
 url: https://mszwec.shinyapps.io/valuation/
-when: 1523932264.71667
+when: 1523943094.80308
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: www/rstudio.jpeg

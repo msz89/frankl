@@ -11,6 +11,14 @@ BG_LIGHT = "#d5f0fb"
 # ROW 1
 row_1 <-fluidRow(
   column(6,
+         h3("Frankl valuation outputs",align="center"),
+         plotOutput("value_plot", click = "plot_click"),
+         h4("Click on the graph to ouput values below"),
+         verbatimTextOutput("info"),
+         plotOutput("ratio_plot")
+  ),
+  
+  column(6,
          
          h3("Frankl market share inputs",align="center"),
          plotOutput("market_plot"),
@@ -27,13 +35,6 @@ row_1 <-fluidRow(
                      step=1),
          
          p(paragraph_text)
-  ),
-  
-  column(6,
-         h3("Frankl valuation outputs",align="center"),
-         plotOutput("value_plot", click = "plot_click"),
-         verbatimTextOutput("info"),
-         plotOutput("ratio_plot")
   )
 )
 
@@ -84,8 +85,7 @@ row_3 <- fluidRow(
 # Define UI for Valuation APP
 ui <- fluidPage(theme="bootstrap.css",
   # App title ---- As Image
-  headerPanel(img(src = "frankl-type-white.png", 
-      height = 140, 
+  headerPanel(img(src = "frankl-type-white.png",
       width = 400
       )),
   row_1,
@@ -206,7 +206,9 @@ server <- function(input, output) {
     barplot(t(df)/1e9,
             main = "Frankl tokens in circulation",
             ylab = "Tokens issued (Billion)",
-            ylim=c(0,700)
+            ylim=c(0,700),
+            legend = c("Held", "In Circulation"), 
+            args.legend = list(x = "topleft", bty = "n")
          )
   })
   
@@ -255,7 +257,7 @@ server <- function(input, output) {
   
 
   output$info <- renderText({
-    paste0("x=", format(input$plot_click$x, digits = 1), "\ny=", format(input$plot_click$y, digits = 4))
+    paste0("Year = ", format(input$plot_click$x, digits = 1), "\nValue = ", format(input$plot_click$y, digits = 4))
   })
   
   output$table_all <- renderTable(data.frame(Year = year, 
